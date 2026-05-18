@@ -10,7 +10,7 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         $email = env('ADMIN_EMAIL', 'admin@rubriq.local');
-        $password = env('ADMIN_PASSWORD', 'admin123');
+        $password = env('ADMIN_PASSWORD', 'PasswordAdmin123!');
 
         User::updateOrCreate(
             ['email' => $email],

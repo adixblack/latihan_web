@@ -1,66 +1,57 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class InstructorApplicationsController extends Controller
 {
-    public function index()
+    public function create()
     {
-        $pending = User::query()
-            ->where('instructor_status', 'pending')
-            ->orderByDesc('instructor_applied_at')
-            ->get(['id','name','email','instructor_application','instructor_applied_at']);
+        $user = Auth::user();
 
-        return Inertia::render('Admin/InstructorApplications', [
-            'pending' => $pending,
+        return Inertia::render('Instructor/Apply', [
+            'currentRole' => $user->role,
+            'instructorStatus' => $user->instructor_status,
+            'application' => $user->instructor_application,
+            'reviewNote' => $user->instructor_review_note,
         ]);
     }
 
-    public function approve(Request $request, User $user)
+    public function store(Request $request)
     {
-        if ($user->instructor_status !== 'pending') {
-            return back()->with('error', 'Status pengajuan bukan pending.');
+        $user = Auth::user();
+
+        // sudah jadi instructor approved? stop
+        if ($user->role === 'instructor' && $user->instructor_status === 'approved') {
+            return back()->with('error', 'Akun Anda sudah berstatus Guru/Dosen.');
         }
 
-        $note = $request->validate([
-            'note' => ['nullable', 'string', 'max:500'],
-        ])['note'] ?? null;
-
-        $user->update([
-            'role' => 'instructor',
-            'instructor_status' => 'approved',
-            'instructor_reviewed_at' => now(),
-            'instructor_reviewed_by' => Auth::id(),
-            'instructor_review_note' => $note,
-        ]);
-
-        return back()->with('success', 'Pengajuan disetujui. User menjadi Guru/Dosen.');
-    }
-
-    public function reject(Request $request, User $user)
-    {
-        if ($user->instructor_status !== 'pending') {
-            return back()->with('error', 'Status pengajuan bukan pending.');
+        // masih pending? stop
+        if ($user->instructor_status === 'pending') {
+            return back()->with('error', 'Pengajuan Anda masih diproses.');
         }
 
-        $note = $request->validate([
-            'note' => ['required', 'string', 'max:500'],
-        ])['note'];
-
-        $user->update([
-            'role' => 'student',                 // tetap student
-            'instructor_status' => 'rejected',
-            'instructor_reviewed_at' => now(),
-            'instructor_reviewed_by' => Auth::id(),
-            'instructor_review_note' => $note,
+        $data = $request->validate([
+            'institution' => ['required', 'string', 'max:120'],
+            'position' => ['required', 'string', 'max:120'], // guru/dosen/lecturer dsb
+            'proof_url' => ['nullable', 'url', 'max:255'],   // link profil / bukti
+            'message' => ['required', 'string', 'max:1000'],
         ]);
 
-        return back()->with('success', 'Pengajuan ditolak.');
+        $user->update([
+            'instructor_status' => 'pending',
+            'instructor_application' => $data,
+            'instructor_applied_at' => now(),
+
+            // reset review fields
+            'instructor_reviewed_at' => null,
+            'instructor_reviewed_by' => null,
+            'instructor_review_note' => null,
+        ]);
+
+        return back()->with('success', 'Pengajuan berhasil dikirim. Tunggu persetujuan Admin.');
     }
 }
