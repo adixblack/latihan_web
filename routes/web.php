@@ -5,10 +5,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-use App\Http\Controllers\InstructorApplicationController;
-use App\Http\Controllers\Admin\InstructorApplicationsController;
+use App\Http\Controllers\InstructorApplicationsController;
+use App\Http\Controllers\Admin\InstructorApplicationsController as AdminInstructorApplicationsController;
 use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Admin\UserController;
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Instructor\InstructorDashboardController;
@@ -62,10 +62,10 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/instructor/apply', [InstructorApplicationController::class, 'create'])
+    Route::get('/instructor/apply', [InstructorApplicationsController::class, 'create'])
         ->name('instructor.apply');
 
-    Route::post('/instructor/apply', [InstructorApplicationController::class, 'store'])
+    Route::post('/instructor/apply', [InstructorApplicationsController::class, 'store'])
         ->name('instructor.apply.store');
 });
 
@@ -81,16 +81,16 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
-        Route::get('/instructor-applications', [InstructorApplicationsController::class, 'index'])
+        Route::get('/instructor-applications', [AdminInstructorApplicationsController::class, 'index'])
             ->name('instructor_applications.index');
 
-        Route::post('/instructor-applications/{user}/approve', [InstructorApplicationsController::class, 'approve'])
+        Route::post('/instructor-applications/{user}/approve', [AdminInstructorApplicationsController::class, 'approve'])
             ->name('instructor_applications.approve');
 
-        Route::post('/instructor-applications/{user}/reject', [InstructorApplicationsController::class, 'reject'])
+        Route::post('/instructor-applications/{user}/reject', [AdminInstructorApplicationsController::class, 'reject'])
             ->name('instructor_applications.reject');
 
-        Route::get('/users', [UsersController::class, 'index'])
+        Route::get('/users', [UserController::class, 'index'])
             ->name('users.index');
     });
 
